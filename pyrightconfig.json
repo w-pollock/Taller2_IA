@@ -1,0 +1,5 @@
+{
+  "include": ["Drones/Drones"],
+  "pythonVersion": "3.10",
+  "typeCheckingMode": "basic"
+}
