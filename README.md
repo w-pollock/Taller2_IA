@@ -8,8 +8,6 @@ Ejecute estos comandos desde la carpeta raiz del proyecto:
 python --version
 python main.py -m adversarial -a RandomAgent -l tiny_hunt -x 0.5 -z 2.0
 
-```
-
 En este archivo puede encontrar comandos de ejecución de todos los layouts con los distintos algoritmos que usted debe implementar. No es necesario que pruebe todas las combinaciones: eliga aquellas que le parezcan interesantes y que le permitan realizar un buen análisis de sus algoritmos. Recuerde que también puede proponer nuevos layouts o editar los existentes. Para los problemas probabilísticos, puede escoger el valor de `p` que le parezca más relevante; se muestran ejemplos con cazadores greedy (p=0), estocásticos (p=1) y mixtos (p=0.3).
 
 El desempeño en el modo adversarial está fuertemente influenciado por la definición de la función de evaluación. Algunas funciones tienen mejor desempeño en ciertos layouts que en otros, por lo que es importante probar varias combinaciones para obtener una visión completa de las fortalezas y debilidades de su función de evaluación. No se preocupe si su función de evaluación no obtiene buenos resultados en todos los layouts: lo importante es que pueda analizar y explicar por qué se desempeña mejor o peor en cada caso, y que pueda identificar oportunidades de mejora.
