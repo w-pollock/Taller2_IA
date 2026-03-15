@@ -1,5 +1,5 @@
 {
-  "include": ["Drones/Drones"],
-  "pythonVersion": "3.10",
+  "include": ["."],
+  "pythonVersion": "3.11",
   "typeCheckingMode": "basic"
 }
