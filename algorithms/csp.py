@@ -25,13 +25,17 @@ def backtracking_search(csp: DroneAssignmentCSP) -> dict[str, str] | None:
     Artificial Intelligence: A Modern Approach (4th Edition) by Russell and Norvig, Chapter 5: Constraint Satisfaction Problems
     """
     assignment: dict[str, str] = {}
+    attempted_assignments = 0
 
     def backtrack() -> dict[str, str] | None:
+        nonlocal attempted_assignments
+
         if csp.is_complete(assignment):
             return dict(assignment)
 
         var = csp.get_unassigned_variables(assignment)[0]
         for value in list(csp.domains[var]):
+            attempted_assignments += 1
             if csp.is_consistent(var, value, assignment):
                 csp.assign(var, value, assignment)
                 result = backtrack()
@@ -41,7 +45,9 @@ def backtracking_search(csp: DroneAssignmentCSP) -> dict[str, str] | None:
 
         return None
 
-    return backtrack()
+    result = backtrack()
+    print(f"Attempted assignments: {attempted_assignments}")
+    return result
 
 
 def backtracking_fc(csp: DroneAssignmentCSP) -> dict[str, str] | None:
@@ -57,6 +63,7 @@ def backtracking_fc(csp: DroneAssignmentCSP) -> dict[str, str] | None:
     - Forward checking reduces the search space by detecting failures earlier than basic backtracking.
     """
     assignment: dict[str, str] = {}
+    attempted_assignments = 0
 
     def copy_dominio() -> dict[str, list[str]]:
         return {var: list(values) for var, values in csp.domains.items()}
@@ -82,12 +89,15 @@ def backtracking_fc(csp: DroneAssignmentCSP) -> dict[str, str] | None:
         return True
 
     def backtrack() -> dict[str, str] | None:
+        nonlocal attempted_assignments
+
         if csp.is_complete(assignment):
             return dict(assignment)
 
         var = csp.get_unassigned_variables(assignment)[0]
 
         for value in list(csp.domains[var]):
+            attempted_assignments += 1
             if not csp.is_consistent(var, value, assignment):
                 continue
 
@@ -105,7 +115,9 @@ def backtracking_fc(csp: DroneAssignmentCSP) -> dict[str, str] | None:
 
         return None
 
-    return backtrack()
+    result = backtrack()
+    print(f"Attempted assignments: {attempted_assignments}")
+    return result
 
 
 
@@ -129,6 +141,7 @@ def backtracking_ac3(csp: DroneAssignmentCSP) -> dict[str, str] | None:
     from collections import deque
 
     assignment: dict[str, str] = {}
+    attempted_assignments = 0
 
     def copy_dominio() -> dict[str, list[str]]:
         return {var: list(values) for var, values in csp.domains.items()}
@@ -216,15 +229,19 @@ def backtracking_ac3(csp: DroneAssignmentCSP) -> dict[str, str] | None:
     dom_iniciales = copy_dominio()
     if not ac3(assignment):
         restaurar_dominios(dom_iniciales)
+        print(f"Attempted assignments: {attempted_assignments}")
         return None
 
     def backtrack() -> dict[str, str] | None:
+        nonlocal attempted_assignments
+
         if csp.is_complete(assignment):
             return dict(assignment)
 
         var = csp.get_unassigned_variables(assignment)[0]
 
         for value in list(csp.domains[var]):
+            attempted_assignments += 1
             if not csp.is_consistent(var, value, assignment):
                 continue
 
@@ -250,6 +267,7 @@ def backtracking_ac3(csp: DroneAssignmentCSP) -> dict[str, str] | None:
 
     result = backtrack()
     restaurar_dominios(dom_iniciales)
+    print(f"Attempted assignments: {attempted_assignments}")
     return result
 
 
@@ -259,13 +277,13 @@ def backtracking_mrv_lcv(csp: DroneAssignmentCSP) -> dict[str, str] | None:
 
     Tips:
     - Combine the techniques from backtracking_fc, mrv_heuristic, and lcv_heuristic.
-    - MRV (Minimum Remaining Values): Select the unassigned variable with the fewest legal values.
       Tie-break by degree: prefer the variable with the most unassigned neighbors.
     - LCV (Least Constraining Value): When ordering values for a variable, prefer
       values that rule out the fewest choices for neighboring variables.
     - Use csp.get_num_conflicts(var, value, assignment) to count how many values would be ruled out for neighbors if var=value is assigned.
     """
     assignment: dict[str, str] = {}
+    attempted_assignments = 0
 
     def copy_dominio() -> dict[str, list[str]]:
         return {var: list(values) for var, values in csp.domains.items()}
@@ -312,11 +330,14 @@ def backtracking_mrv_lcv(csp: DroneAssignmentCSP) -> dict[str, str] | None:
         return True
 
     def backtrack() -> dict[str, str] | None:
+        nonlocal attempted_assignments
+
         if csp.is_complete(assignment):
             return dict(assignment)
 
         var = select_mrv_var()
         for value in valores_ordenados(var):
+            attempted_assignments += 1
             if not csp.is_consistent(var, value, assignment):
                 continue
 
@@ -334,4 +355,6 @@ def backtracking_mrv_lcv(csp: DroneAssignmentCSP) -> dict[str, str] | None:
 
         return None
 
-    return backtrack()
+    result = backtrack()
+    print(f"Attempted assignments: {attempted_assignments}")
+    return result
