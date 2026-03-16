@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 from typing import TYPE_CHECKING
 from abc import ABC, abstractmethod
+import math
 
 import algorithms.evaluation as evaluation
 from world.game import Agent, Directions
@@ -52,21 +53,71 @@ class MinimaxAgent(MultiAgentSearchAgent):
 
     def get_action(self, state: GameState) -> Directions | None:
         """
-        Returns the best action for the drone using minimax.
-
-        Tips:
-        - The game tree alternates: drone (MAX) -> hunter1 (MIN) -> hunter2 (MIN) -> ... -> drone (MAX) -> ...
-        - Use self.depth to control the search depth. depth=1 means the drone moves once and each hunter moves once.
-        - Use state.get_legal_actions(agent_index) to get legal actions for a specific agent.
-        - Use state.generate_successor(agent_index, action) to get the successor state after an action.
-        - Use state.is_win() and state.is_lose() to check terminal states.
-        - Use state.get_num_agents() to get the total number of agents.
-        - Use self.evaluation_function(state) to evaluate leaf/terminal states.
-        - The next agent is (agent_index + 1) % num_agents. Depth decreases after all agents have moved (full ply).
-        - Return the ACTION (not the value) that maximizes the minimax value for the drone.
+        Returns the best action for the drone using minimax search.
         """
-        # TODO: Implement your code here
-        return None
+ 
+        def minimax(state: GameState, agent_index: int, depth: int) -> float:
+            """
+            Minimax recursivo. Retorna el valor minimax del estado dado.
+ 
+            - agent_index=0 → dron (nodo MAX)
+            - agent_index>0 → cazador (nodo MIN)
+            - La profundidad disminuye 1 después de que TODOS los agentes hayan movido (ply completo).
+            """
+            # Caso base: estado terminal (victoria/derrota) o profundidad agotada
+            if state.is_win() or state.is_lose():
+                return self.evaluation_function(state)
+ 
+            num_agents = state.get_num_agents()
+            legal_actions = state.get_legal_actions(agent_index)
+ 
+            
+            if not legal_actions:
+                return self.evaluation_function(state)
+ 
+            # Cuando el último agente mueve, se completa un ply → decrementar profundidad
+            next_agent = (agent_index + 1) % num_agents
+            next_depth = depth - 1 if next_agent == 0 else depth
+ 
+            # Verificar límite de profundidad (solo al iniciar un nuevo ply del dron)
+            if next_agent == 0 and depth == 0:
+                return self.evaluation_function(state)
+ 
+            if agent_index == 0:
+                best = -math.inf
+                for action in legal_actions:
+                    successor = state.generate_successor(agent_index, action)
+                    val = minimax(successor, next_agent, next_depth)
+                    best = max(best, val)
+                return best
+            else:
+                # Nodo MIN: cazador
+                best = math.inf
+                for action in legal_actions:
+                    successor = state.generate_successor(agent_index, action)
+                    val = minimax(successor, next_agent, next_depth)
+                    best = min(best, val)
+                return best
+ 
+        # Llamada raíz: el dron es el agente 0; se elige la acción con mayor valor minimax
+        legal_actions = state.get_legal_actions(self.index)
+        if not legal_actions:
+            return None
+ 
+        num_agents = state.get_num_agents()
+        best_action = None
+        best_value = -math.inf
+ 
+        for action in legal_actions:
+            successor = state.generate_successor(self.index, action)
+            next_agent = 1 % num_agents 
+            next_depth = self.depth - 1 if next_agent == 0 else self.depth
+            val = minimax(successor, next_agent, next_depth)
+            if val > best_value:
+                best_value = val
+                best_action = action
+ 
+        return best_action
 
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
@@ -78,20 +129,84 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
 
     def get_action(self, state: GameState) -> Directions | None:
         """
-        Returns the best action for the drone using alpha-beta pruning.
-
-        Tips:
-        - Same structure as MinimaxAgent, but with alpha-beta pruning.
-        - Alpha: best value MAX can guarantee (initially -inf).
-        - Beta: best value MIN can guarantee (initially +inf).
-        - MAX node: prune when value > beta (strict inequality, do NOT prune on equality).
-        - MIN node: prune when value < alpha (strict inequality, do NOT prune on equality).
-        - Update alpha at MAX nodes: alpha = max(alpha, value).
-        - Update beta at MIN nodes: beta = min(beta, value).
-        - Pass alpha and beta through the recursive calls.
+        Returns the best action for the drone using minimax search with alpha-beta pruning.
         """
-        # TODO: Implement your code here (BONUS)
-        return None
+ 
+        def alphabeta(
+            state: GameState,
+            agent_index: int,
+            depth: int,
+            alpha: float,
+            beta: float,
+        ) -> float:
+            """
+            Búsqueda alfa-beta recursiva. Retorna el valor minimax con poda.
+            """
+            # Caso base: estado terminal o profundidad agotada
+            if state.is_win() or state.is_lose():
+                return self.evaluation_function(state)
+ 
+            num_agents = state.get_num_agents()
+            legal_actions = state.get_legal_actions(agent_index)
+ 
+            if not legal_actions:
+                return self.evaluation_function(state)
+ 
+            next_agent = (agent_index + 1) % num_agents
+            next_depth = depth - 1 if next_agent == 0 else depth
+ 
+            if next_agent == 0 and depth == 0:
+                return self.evaluation_function(state)
+ 
+            if agent_index == 0:
+                # Nodo MAX: dron
+                value = -math.inf
+                for action in legal_actions:
+                    successor = state.generate_successor(agent_index, action)
+                    value = max(
+                        value,
+                        alphabeta(successor, next_agent, next_depth, alpha, beta),
+                    )
+                    if value > beta:
+                        return value
+                    alpha = max(alpha, value)
+                return value
+            else:
+                # Nodo MIN: cazador
+                value = math.inf
+                for action in legal_actions:
+                    successor = state.generate_successor(agent_index, action)
+                    value = min(
+                        value,
+                        alphabeta(successor, next_agent, next_depth, alpha, beta),
+                    )
+                    if value < alpha:
+                        return value
+                    beta = min(beta, value)
+                return value
+ 
+        # Raíz: elegir la acción con el mejor valor alfa-beta
+        legal_actions = state.get_legal_actions(self.index)
+        if not legal_actions:
+            return None
+ 
+        num_agents = state.get_num_agents()
+        best_action = None
+        best_value = -math.inf
+        alpha = -math.inf
+        beta = math.inf
+ 
+        for action in legal_actions:
+            successor = state.generate_successor(self.index, action)
+            next_agent = 1 % num_agents
+            next_depth = self.depth - 1 if next_agent == 0 else self.depth
+            val = alphabeta(successor, next_agent, next_depth, alpha, beta)
+            if val > best_value:
+                best_value = val
+                best_action = action
+            alpha = max(alpha, best_value)
+ 
+        return best_action
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
